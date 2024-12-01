@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_REPO = "ramugadde84/sample-docker-images"
+        DOCKERHUB_REPO = " "
         DOCKER_IMAGE = "my-app"
         DOCKER_TAG = "latest"
     }
@@ -50,7 +50,8 @@ pipeline {
             steps {
                 script {
                     // Run the Docker container
-                    sh 'docker run -d -p 9191:9191 ${DOCKERHUB_REPO}:${DOCKER_TAG}'
+                    // -d flag runs the container in detached mode
+                    sh 'docker run -d -p 8080:9191 ${DOCKERHUB_REPO}:${DOCKER_TAG}'
                 }
             }
         }
