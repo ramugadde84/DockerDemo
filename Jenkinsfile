@@ -13,8 +13,17 @@ pipeline {
         stage('Start Minikube') {
             steps {
                 script {
-                    // Start Minikube if it's not running
-                    sh 'minikube start'
+                    // Check if Minikube is already running
+                    def minikubeStatus = sh(script: 'minikube status | grep -i "host: Running"', returnStdout: true).trim()
+
+                    if (minikubeStatus == "") {
+                        // If Minikube is not running, start it
+                        echo 'Minikube is not running. Starting Minikube...'
+                        sh 'minikube start'
+                    } else {
+                        // Minikube is already running
+                        echo 'Minikube is already running.'
+                    }
                 }
             }
         }
