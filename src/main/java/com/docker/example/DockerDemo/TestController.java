@@ -9,6 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 class TestController {
     @GetMapping("/hello")
     public String sayHello() {
-        return "kubernetes code updated";
+        return "kubernetes code updated!!";
     }
 }
