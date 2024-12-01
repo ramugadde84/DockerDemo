@@ -7,7 +7,7 @@ pipeline {
     }
 
     tools {
-        maven 'Maven 3'  // Maven version from Jenkins tool configuration
+        maven 'Apache maven'  // Maven version from Jenkins tool configuration
         dockerTool 'Docker'  // Docker tool configured in Jenkins
     }
 
