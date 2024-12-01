@@ -51,7 +51,7 @@ pipeline {
                 script {
                     // Run the Docker container
                     // -d flag runs the container in detached mode
-                    sh 'docker run -d -p 8080:9191 ${DOCKERHUB_REPO}:${DOCKER_TAG}'
+                    sh 'docker run -d -p 9191:9191 ${DOCKERHUB_REPO}:${DOCKER_TAG}'
                 }
             }
         }
