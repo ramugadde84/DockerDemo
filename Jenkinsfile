@@ -14,7 +14,16 @@ pipeline {
                 git url: 'https://github.com/ramugadde84/DockerDemo.git', branch: 'main'
             }
         }
-        
+
+        stage('Build Maven Project') {
+            steps {
+                script {
+                    // Run Maven clean install to build the project and generate the target folder
+                    sh 'mvn clean install'
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -36,7 +45,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Run Docker Image') {
             steps {
                 script {
