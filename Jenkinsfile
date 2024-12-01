@@ -3,40 +3,12 @@ pipeline {
 
     environment {
         DOCKERHUB_REPO = "ramugadde84/sample-docker-images"
+        DOCKER_IMAGE = "my-app"
         DOCKER_TAG = "latest"
         DOCKER_CONTAINER = "spring-docker-container"
-        K8S_DEPLOYMENT_YAML = "deployment.yaml"
-        KUBECONFIG = '/var/lib/jenkins/.kube/config'
     }
 
     stages {
-        stage('Start Minikube') {
-            steps {
-                script {
-                    // Check if Minikube is already running
-                    def minikubeStatus = sh(script: 'minikube status | grep -i "host: Running"', returnStdout: true).trim()
-
-                    if (minikubeStatus == "") {
-                        // If Minikube is not running, start it
-                        echo 'Minikube is not running. Starting Minikube...'
-                        sh 'minikube start'
-                    } else {
-                        // Minikube is already running
-                        echo 'Minikube is already running.'
-                    }
-                }
-            }
-        }
-
-        stage('Use Minikube Context') {
-            steps {
-                script {
-                    // Set kubectl to use minikube context explicitly
-                    sh 'kubectl config use-context minikube'
-                }
-            }
-        }
-
         stage('Checkout') {
             steps {
                 // Checkout code from SCM (GitHub)
@@ -77,50 +49,31 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Stop Existing Docker Container') {
             steps {
                 script {
-                    // Deploy the Docker container to Kubernetes using kubectl and the deployment YAML
-                    sh 'kubectl apply -f ${K8S_DEPLOYMENT_YAML}'
+                    // Stop and remove existing container if it exists
+                    //  -q: Only display numeric IDs
+                    // -f: Filter output based on conditions provided
+                    def containerId = sh(script: "docker ps -q -f name=${DOCKER_CONTAINER}", returnStdout: true).trim()
+
+                    if (containerId) {
+                        echo "Stopping and removing existing container with ID ${containerId}"
+                        sh "docker stop ${containerId}"
+                        sh "docker rm ${containerId}"
+                    } else {
+                        echo "No existing container with name ${DOCKER_CONTAINER} found."
+                    }
                 }
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Run Docker Image') {
             steps {
                 script {
-                    // Check the status of the pods in the Kubernetes cluster
-                    sh 'kubectl get pods'
-                }
-            }
-        }
-
-        stage('Expose Kubernetes Service') {
-            steps {
-                script {
-                    // Expose the service to access the app externally (optional, if not already exposed)
-                    sh 'kubectl expose deployment my-app-deployment --type=LoadBalancer --port=80 --target-port=8080'
-                }
-            }
-        }
-
-        stage('Port Forward to Localhost') {
-            steps {
-                script {
-                    // Forward port 80 (service) from Kubernetes to port 8080 on localhost
-                    echo 'Port forwarding from Kubernetes to localhost on port 8080'
-                    sh 'kubectl port-forward service/my-app-service 9191:9191 &'
-                }
-            }
-        }
-
-        stage('Kill Pods and Services (Cleanup)') {
-            steps {
-                script {
-                    // Stop and delete the Kubernetes deployment and services
-                    echo 'Cleaning up by deleting pods and services.'
-                    sh 'kubectl delete service my-app-service'
-                    sh 'kubectl delete deployment my-app-deployment'
+                    // Run the Docker container with the updated image
+                    // -d: Run the container in detached mode
+                    sh 'docker run -d --name ${DOCKER_CONTAINER} -p 9191:8080 ${DOCKERHUB_REPO}:${DOCKER_TAG}'
                 }
             }
         }
