@@ -6,36 +6,11 @@ pipeline {
         DOCKER_TAG = "latest"
         DOCKER_CONTAINER = "spring-docker-container"
         K8S_DEPLOYMENT_YAML = "deployment.yaml"
+        K8S_SERVICE_NAME = "my-app-service"
+        K8S_DEPLOYMENT_NAME = "my-app-deployment"
     }
 
     stages {
-        stage('Start Minikube') {
-            steps {
-                script {
-                    // Check if Minikube is already running
-                    def minikubeStatus = sh(script: 'minikube status | grep -i "host: Running"', returnStdout: true).trim()
-
-                    if (minikubeStatus == "") {
-                        // If Minikube is not running, start it
-                        echo 'Minikube is not running. Starting Minikube...'
-                        sh 'minikube start'
-                    } else {
-                        // Minikube is already running
-                        echo 'Minikube is already running.'
-                    }
-                }
-            }
-        }
-
-        stage('Use Minikube Context') {
-            steps {
-                script {
-                    // Set kubectl to use minikube context explicitly
-                    sh 'kubectl config use-context minikube'
-                }
-            }
-        }
-
         stage('Checkout') {
             steps {
                 // Checkout code from SCM (GitHub)
@@ -76,6 +51,18 @@ pipeline {
             }
         }
 
+        stage('Clean Up Existing Deployment and Service') {
+            steps {
+                script {
+                    // Delete the existing service and deployment if they exist
+                    sh '''
+                    kubectl delete service ${K8S_SERVICE_NAME} || true
+                    kubectl delete deployment ${K8S_DEPLOYMENT_NAME} || true
+                    '''
+                }
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             steps {
                 script {
@@ -98,7 +85,7 @@ pipeline {
             steps {
                 script {
                     // Expose the service to access the app externally (optional, if not already exposed)
-                    sh 'kubectl expose deployment my-app-deployment --type=LoadBalancer --port=80 --target-port=8080'
+                    sh 'kubectl expose deployment ${K8S_DEPLOYMENT_NAME} --name=${K8S_SERVICE_NAME} --type=LoadBalancer --port=80 --target-port=8080'
                 }
             }
         }
@@ -108,11 +95,11 @@ pipeline {
                 script {
                     // Forward port 80 (service) from Kubernetes to port 8080 on localhost
                     echo 'Port forwarding from Kubernetes to localhost on port 8080'
-                    sh 'kubectl port-forward service/my-app-service 9191:9191 &'
+                    sh 'kubectl port-forward service/${K8S_SERVICE_NAME} 9191:9191 &'
                 }
             }
         }
-      }
+    }
 
     post {
         always {
