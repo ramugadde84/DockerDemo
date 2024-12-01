@@ -6,6 +6,7 @@ pipeline {
         DOCKER_TAG = "latest"
         DOCKER_CONTAINER = "spring-docker-container"
         K8S_DEPLOYMENT_YAML = "deployment.yaml"  // Path to your Kubernetes deployment YAML
+        K8S_CLUSTER_NAME = "minikube"  // Minikube as the Kubernetes cluster name
     }
 
     stages {
@@ -50,31 +51,33 @@ pipeline {
         }
 
         stage('Stop Existing Docker Container') {
-                    steps {
-                        script {
-                            // Stop and remove existing container if it exists
-                            //  -q: Only display numeric IDs
-                            // -f: Filter output based on conditions provided
-                            def containerId = sh(script: "docker ps -q -f name=${DOCKER_CONTAINER}", returnStdout: true).trim()
+            steps {
+                script {
+                    // Stop and remove existing container if it exists
+                    //  -q: Only display numeric IDs
+                    // -f: Filter output based on conditions provided
+                    def containerId = sh(script: "docker ps -q -f name=${DOCKER_CONTAINER}", returnStdout: true).trim()
 
-                            if (containerId) {
-                                echo "Stopping and removing existing container with ID ${containerId}"
-                                sh "docker stop ${containerId}"
-                                sh "docker rm ${containerId}"
-                            } else {
-                                echo "No existing container with name ${DOCKER_CONTAINER} found."
-                            }
-                        }
+                    if (containerId) {
+                        echo "Stopping and removing existing container with ID ${containerId}"
+                        sh "docker stop ${containerId}"
+                        sh "docker rm ${containerId}"
+                    } else {
+                        echo "No existing container with name ${DOCKER_CONTAINER} found."
                     }
+                }
+            }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
                 script {
+                    // Ensure Minikube's kubectl context is set
+                    sh 'kubectl config use-context minikube'
+
                     // Deploy the Docker container to Kubernetes using kubectl and the deployment YAML
-                    // Ensure kubectl is configured to point to your MicroK8s cluster
                     sh '''
-                    microk8s kubectl apply -f ${K8S_DEPLOYMENT_YAML}
+                    kubectl apply -f ${K8S_DEPLOYMENT_YAML}
                     '''
                 }
             }
@@ -85,7 +88,7 @@ pipeline {
                 script {
                     // Check the status of the pods in the Kubernetes cluster
                     sh '''
-                    microk8s kubectl get pods
+                    kubectl get pods
                     '''
                 }
             }
@@ -96,7 +99,30 @@ pipeline {
                 script {
                     // Expose the service to access the app externally (optional, if not already exposed)
                     sh '''
-                    microk8s kubectl expose deployment my-app-deployment --type=LoadBalancer --port=80 --target-port=8080
+                    kubectl expose deployment my-app-deployment --type=LoadBalancer --port=80 --target-port=8080
+                    '''
+                }
+            }
+        }
+
+        stage('Port Forward to Localhost') {
+            steps {
+                script {
+                    // Forward port 80 (service) from Kubernetes to port 8080 on localhost
+                    echo 'Port forwarding from Kubernetes to localhost on port 8080'
+                    sh 'kubectl port-forward service/my-app-service 9191:9191 &'
+                }
+            }
+        }
+
+        stage('Kill Pods and Services (Cleanup)') {
+            steps {
+                script {
+                    // Stop and delete the Kubernetes deployment and services
+                    echo 'Cleaning up by deleting pods and services.'
+                    sh '''
+                    kubectl delete service my-app-service
+                    kubectl delete deployment my-app-deployment
                     '''
                 }
             }
