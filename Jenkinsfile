@@ -112,18 +112,7 @@ pipeline {
                 }
             }
         }
-
-        stage('Kill Pods and Services (Cleanup)') {
-            steps {
-                script {
-                    // Stop and delete the Kubernetes deployment and services
-                    echo 'Cleaning up by deleting pods and services.'
-                    sh 'kubectl delete service my-app-service'
-                    sh 'kubectl delete deployment my-app-deployment'
-                }
-            }
-        }
-    }
+      }
 
     post {
         always {
