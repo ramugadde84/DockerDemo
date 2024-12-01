@@ -31,7 +31,7 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image
-                    sh 'docker build -t ${DOCKERHUB_REPO}:${DOCKER_TAG} .'
+                    sh 'docker build --no-cache -t ${DOCKERHUB_REPO}:${DOCKER_TAG} .'
                 }
             }
         }
@@ -73,6 +73,15 @@ pipeline {
             }
         }
 
+        stage('Update Deployment with Latest Image') {
+            steps {
+                script {
+                    // Ensure the deployment uses the latest Docker image
+                    sh 'kubectl set image deployment/${K8S_DEPLOYMENT_NAME} ${DOCKER_CONTAINER}=${DOCKERHUB_REPO}:${DOCKER_TAG}'
+                }
+            }
+        }
+
         stage('Verify Deployment') {
             steps {
                 script {
@@ -98,7 +107,6 @@ pipeline {
                 }
             }
         }
-
 
         stage('Port Forward to Localhost') {
             steps {
