@@ -5,11 +5,29 @@ pipeline {
         DOCKERHUB_REPO = "ramugadde84/sample-docker-images"
         DOCKER_TAG = "latest"
         DOCKER_CONTAINER = "spring-docker-container"
-        K8S_DEPLOYMENT_YAML = "deployment.yaml"  // Path to your Kubernetes deployment YAML
-        K8S_CLUSTER_NAME = "minikube"  // Minikube as the Kubernetes cluster name
+        K8S_DEPLOYMENT_YAML = "deployment.yaml"
+        KUBECONFIG = '/home/jenkins/.kube/config'  // Path to the kubeconfig file
     }
 
     stages {
+        stage('Start Minikube') {
+            steps {
+                script {
+                    // Start Minikube if it's not running
+                    sh 'minikube start'
+                }
+            }
+        }
+
+        stage('Use Minikube Context') {
+            steps {
+                script {
+                    // Set kubectl to use minikube context explicitly
+                    sh 'kubectl config use-context minikube'
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
                 // Checkout code from SCM (GitHub)
@@ -50,35 +68,11 @@ pipeline {
             }
         }
 
-        stage('Stop Existing Docker Container') {
-            steps {
-                script {
-                    // Stop and remove existing container if it exists
-                    //  -q: Only display numeric IDs
-                    // -f: Filter output based on conditions provided
-                    def containerId = sh(script: "docker ps -q -f name=${DOCKER_CONTAINER}", returnStdout: true).trim()
-
-                    if (containerId) {
-                        echo "Stopping and removing existing container with ID ${containerId}"
-                        sh "docker stop ${containerId}"
-                        sh "docker rm ${containerId}"
-                    } else {
-                        echo "No existing container with name ${DOCKER_CONTAINER} found."
-                    }
-                }
-            }
-        }
-
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    // Ensure Minikube's kubectl context is set
-                    sh 'kubectl config use-context minikube'
-
                     // Deploy the Docker container to Kubernetes using kubectl and the deployment YAML
-                    sh '''
-                    kubectl apply -f ${K8S_DEPLOYMENT_YAML}
-                    '''
+                    sh 'kubectl apply -f ${K8S_DEPLOYMENT_YAML}'
                 }
             }
         }
@@ -87,9 +81,7 @@ pipeline {
             steps {
                 script {
                     // Check the status of the pods in the Kubernetes cluster
-                    sh '''
-                    kubectl get pods
-                    '''
+                    sh 'kubectl get pods'
                 }
             }
         }
@@ -98,9 +90,7 @@ pipeline {
             steps {
                 script {
                     // Expose the service to access the app externally (optional, if not already exposed)
-                    sh '''
-                    kubectl expose deployment my-app-deployment --type=LoadBalancer --port=80 --target-port=8080
-                    '''
+                    sh 'kubectl expose deployment my-app-deployment --type=LoadBalancer --port=80 --target-port=8080'
                 }
             }
         }
@@ -120,10 +110,8 @@ pipeline {
                 script {
                     // Stop and delete the Kubernetes deployment and services
                     echo 'Cleaning up by deleting pods and services.'
-                    sh '''
-                    kubectl delete service my-app-service
-                    kubectl delete deployment my-app-deployment
-                    '''
+                    sh 'kubectl delete service my-app-service'
+                    sh 'kubectl delete deployment my-app-deployment'
                 }
             }
         }
