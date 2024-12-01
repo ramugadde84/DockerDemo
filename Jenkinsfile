@@ -74,7 +74,7 @@ pipeline {
                     // Deploy the Docker container to Kubernetes using kubectl and the deployment YAML
                     // Ensure kubectl is configured to point to your MicroK8s cluster
                     sh '''
-                    kubectl apply -f ${K8S_DEPLOYMENT_YAML}
+                    microk8s kubectl apply -f ${K8S_DEPLOYMENT_YAML}
                     '''
                 }
             }
@@ -85,7 +85,7 @@ pipeline {
                 script {
                     // Check the status of the pods in the Kubernetes cluster
                     sh '''
-                    kubectl get pods
+                    microk8s kubectl get pods
                     '''
                 }
             }
@@ -96,7 +96,7 @@ pipeline {
                 script {
                     // Expose the service to access the app externally (optional, if not already exposed)
                     sh '''
-                    kubectl expose deployment my-app-deployment --type=LoadBalancer --port=80 --target-port=8080
+                    microk8s kubectl expose deployment my-app-deployment --type=LoadBalancer --port=80 --target-port=8080
                     '''
                 }
             }
