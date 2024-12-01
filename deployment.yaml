@@ -19,19 +19,6 @@ spec:
             - containerPort: 8080  # Port the container will expose
 
 ---
-#apiVersion: v1
-#kind: Service
-#metadata:
-#  name: my-app-service
-#spec:
-#  selector:
-#    app: my-app
-#  ports:
-#    - protocol: TCP
-#      port: 9191          # Port exposed on the service (host)
-#      targetPort: 8080    # Port on the container (application inside container)
-#  type: NodePort      # Exposing via NodePort
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -41,6 +28,6 @@ spec:
     app: my-app
   ports:
     - protocol: TCP
-      port: 9191  # Port on which the service is exposed
-      targetPort: 8080  # Port the container is listening on
-  type: LoadBalancer
+      port: 9191          # Port exposed on the service (host)
+      targetPort: 8080    # Port on the container (application inside container)
+  type: NodePort      # Exposing via NodePort
