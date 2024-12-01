@@ -85,11 +85,20 @@ pipeline {
         stage('Expose Kubernetes Service') {
             steps {
                 script {
-                    // Expose the service to access the app externally (optional, if not already exposed)
-                    sh 'kubectl expose deployment ${K8S_DEPLOYMENT_NAME} --name=${K8S_SERVICE_NAME} --type=LoadBalancer --port=80 --target-port=8080'
+                    // Check if the service already exists
+                    def serviceExists = sh(script: "kubectl get service ${K8S_SERVICE_NAME} --ignore-not-found=true", returnStatus: true)
+
+                    // If the service does not exist (exit code is 1), expose it
+                    if (serviceExists != 0) {
+                        echo "Service ${K8S_SERVICE_NAME} does not exist. Exposing the service."
+                        sh 'kubectl expose deployment ${K8S_DEPLOYMENT_NAME} --name=${K8S_SERVICE_NAME} --type=LoadBalancer --port=80 --target-port=8080'
+                    } else {
+                        echo "Service ${K8S_SERVICE_NAME} already exists. Skipping exposure."
+                    }
                 }
             }
         }
+
 
         stage('Port Forward to Localhost') {
             steps {
