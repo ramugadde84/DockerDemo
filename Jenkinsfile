@@ -35,17 +35,19 @@ pipeline {
             }
         }
 
-        stage('Stop Existing Docker Container') {
+        stage('Stop Existing Docker Container by Port') {
             steps {
                 script {
-                    // Check if a container with the same name is already running and stop it
-                    def containerExists = sh(script: "docker ps -q -f name=${CONTAINER_NAME}", returnStdout: true).trim()
-                    if (containerExists) {
-                        echo "Stopping existing container ${CONTAINER_NAME}"
-                        sh "docker stop ${CONTAINER_NAME}"
-                        sh "docker rm ${CONTAINER_NAME}"
+                    // Find container ID based on the port
+                    def containerId = sh(script: "docker ps -q -f 'ancestor=${DOCKERHUB_REPO}:${DOCKER_TAG}' -f 'publish=${PORT}'", returnStdout: true).trim()
+
+                    if (containerId) {
+                        echo "Stopping existing container with ID ${containerId} using port ${PORT}"
+                        // Stop and remove the container using its ID
+                        sh "docker stop ${containerId}"
+                        sh "docker rm ${containerId}"
                     } else {
-                        echo "No existing container found, skipping stop."
+                        echo "No container found using port ${PORT}, skipping stop."
                     }
                 }
             }
