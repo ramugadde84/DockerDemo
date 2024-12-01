@@ -6,7 +6,7 @@ pipeline {
         DOCKER_TAG = "latest"
         DOCKER_CONTAINER = "spring-docker-container"
         K8S_DEPLOYMENT_YAML = "deployment.yaml"
-        KUBECONFIG = '/var/lib/jenkins/.minikube/config'
+        KUBECONFIG = '/var/lib/jenkins/.kube/config'
     }
 
     stages {
