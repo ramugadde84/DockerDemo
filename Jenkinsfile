@@ -58,6 +58,7 @@ pipeline {
                     sh '''
                     kubectl delete service ${K8S_SERVICE_NAME} || true
                     kubectl delete deployment ${K8S_DEPLOYMENT_NAME} || true
+                    kubectl delete service ${K8S_DEPLOYMENT_NAME} || true
                     '''
                 }
             }
