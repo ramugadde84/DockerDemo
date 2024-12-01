@@ -5,6 +5,7 @@ pipeline {
         DOCKERHUB_REPO = "ramugadde84/sample-docker-images"
         DOCKER_IMAGE = "my-app"
         DOCKER_TAG = "latest"
+        DOCKER_CONTAINER = "spring-docker-container"
     }
 
     stages {
@@ -28,6 +29,7 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image
+                    // -t flag tags the Docker image with the provided tag
                     sh 'docker build -t ${DOCKERHUB_REPO}:${DOCKER_TAG} .'
                 }
             }
@@ -49,9 +51,16 @@ pipeline {
         stage('Run Docker Image') {
             steps {
                 script {
-                    // Run the Docker container
-                    // -d flag runs the container in detached mode
-                    sh 'docker run -d -p 9191:8080 ${DOCKERHUB_REPO}:${DOCKER_TAG}'
+                    // Stop and remove the existing container (if it exists)
+                    sh '''
+                    if [ $(docker ps -q -f name= ${DOCKER_CONTAINER}) ]; then
+                        docker stop ${DOCKER_CONTAINER}
+                        docker rm ${DOCKER_CONTAINER}
+                    fi
+                    '''
+
+                    // Run the Docker container with the updated image
+                    sh 'docker run -d --name ${DOCKER_CONTAINER} -p 9191:8080 ${DOCKERHUB_REPO}:${DOCKER_TAG}'
                 }
             }
         }
