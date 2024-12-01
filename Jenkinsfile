@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_REPO = "ramugadde84/sample-docker-images"
-        DOCKER_TAG = "latest"
+        DOCKER_TAG = "1.0"
         DOCKER_CONTAINER = "spring-docker-container"
         K8S_DEPLOYMENT_YAML = "deployment.yaml"
         K8S_SERVICE_NAME = "my-app-service"

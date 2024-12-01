@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: spring-docker-container  # Name of the container
-          image: ramugadde84/sample-docker-images:latest  # The Docker image pushed to Docker Hub
+          image: ramugadde84/sample-docker-images:1.0  # The Docker image pushed to Docker Hub
           ports:
             - containerPort: 8080  # Port the container will expose
 
