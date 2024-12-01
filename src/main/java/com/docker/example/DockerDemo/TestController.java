@@ -9,6 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 class TestController {
     @GetMapping("/hello")
     public String sayHello() {
-        return "Hello, Spring Boot 3.0 with Docker!";
+        return "Ramu updated code !";
     }
 }
